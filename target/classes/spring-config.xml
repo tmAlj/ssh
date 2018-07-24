@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+       xsi:schemaLocation="
+		http://www.springframework.org/schema/data/jpa
+	    http://www.springframework.org/schema/data/jpa/spring-jpa.xsd
+		http://www.springframework.org/schema/tx
+	 	http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+	 	http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+    <!-- spring公共配置 -->
+    <!-- 1.开启自动扫描 -->
+    <context:annotation-config />
+    <context:component-scan base-package="com.wsd.*" />
+    <!-- end -->
+
+    <!-- 2.通过properties文件配置数据源 -->
+    <bean id="dataSource_proxool"
+          class="org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy">
+        <property name="targetDataSource">
+            <bean class="org.logicalcobwebs.proxool.ProxoolDataSource">
+                <property name="driver" value="${db.driver.class}" />
+                <property name="driverUrl" value="${db.url}" />
+                <property name="user" value="${db.username}" />
+                <property name="password" value="${db.password}" />
+                <property name="maximumConnectionCount" value="10" />
+                <property name="minimumConnectionCount" value="5" />
+                <property name="statistics" value="1m,15m,1h,1d" />
+                <property name="simultaneousBuildThrottle" value="30" />
+                <property name="trace" value="false" />
+            </bean>
+        </property>
+    </bean>
+    <!-- end -->
+
+    <!-- 3.配置properties文件读取器 -->
+    <bean
+            class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:db-resources.properties</value>
+            </list>
+        </property>
+    </bean>
+    <!-- end -->
+    <!-- spring公共配置 end -->
+
+    <!-- jpa配置 -->
+    <!-- 4.指定jpa的Dao所在根包 -->
+    <jpa:repositories base-package="com.wsd.dao"/>
+    <!-- end -->
+
+    <!-- 5.Entity管理工厂，指定数据源 -->
+    <bean id="entityManagerFactory"
+          class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="dataSource_proxool" />
+    </bean>
+    <!-- end -->
+
+    <!-- 6.事务管理器，指定Entity管理工厂 -->
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory" />
+    </bean>
+    <!-- end -->
+
+    <!-- 7.注释驱动，让注释生效，指定事务管理器 -->
+    <tx:annotation-driven transaction-manager="transactionManager" />
+    <!-- end -->
+
+    <!-- jpa配置 end -->
+</beans>
